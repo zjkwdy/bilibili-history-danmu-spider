@@ -7,8 +7,8 @@
 食用教程：先把浏览器Cookie中的SESSDATA，例如
 `b7723dd1%1C45141919810%2C6b33f*21`
 在代码找到
-`SESSDATA=''`
-把SESSDATA填进去保存
+`SESSDATA=['']`
+把SESSDATA填进去保存，多个SESSDATA直接塞进列表里，会随机使用。
 
 ## 想要爬别的视频弹幕？
 ***把代码中cid改成对应视频的cid即可。***

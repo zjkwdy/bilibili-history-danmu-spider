@@ -24,7 +24,7 @@ def get_danmu_months(cid, month, SESSDATA):
     api_url = f'http://api.bilibili.com/x/v2/dm/history/index?type=1&oid={str(cid)}&month={month}'
     req_headers = {
         'User-Agent': random_user_agent(),
-        'Cookie': 'SESSDATA='+SESSDATA+';'
+        'Cookie': 'SESSDATA='+random_SESSDATA(SESSDATA)+';'
     }
     req = requests.get(url=api_url, headers=req_headers)
     return req.json()
@@ -51,7 +51,7 @@ def get_day_danmu(cid, date, SESSDATA):
     api_url = f'https://api.bilibili.com/x/v2/dm/web/history/seg.so?type=1&oid={cid}&date={date}'
     req_header = {
         'User-Agent': random_user_agent(),
-        'Cookie': 'SESSDATA='+SESSDATA+';',
+        'Cookie': 'SESSDATA='+random_SESSDATA(SESSDATA)+';',
         'Referer': 'https://www.bilibili.com/',
         'Origin': 'https://www.bilibili.com'
     }
@@ -114,15 +114,20 @@ def random_user_agent():
 
     return random.choice(USER_AGENTS)
 
+
+#随机SESSDATA，多个SESSDATA时很有用
+def random_SESSDATA(SESSDATA):
+    return random.choice(SESSDATA)
+
 if __name__ == '__main__':
-    # av114514的cid
+    # av114514 1P的cid 190524
     cid = 190524
     # 历史弹幕开始年
     start_year = 2011
     # 历史弹幕结束年
     end_year = 2021
-    # Cookie中的SESSDATA
-    SESSDATA=''
+    # Cookie中的SESSDATA,可为多个
+    SESSDATA=['']
     # 延迟，防屏蔽,单位：秒
     daily = 1
 
