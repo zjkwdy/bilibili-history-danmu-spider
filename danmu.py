@@ -21,21 +21,26 @@ def list_months(start, end):
 
 
 # 获取某年某月有弹幕的天，返回天数组。
-def get_danmu_months(cid, month, SESSDATA):
+def get_danmu_months(cid, month, SESSDATA, proxy):
     api_url = f'http://api.bilibili.com/x/v2/dm/history/index?type=1&oid={str(cid)}&month={month}'
     req_headers = {
         'User-Agent': random_user_agent(),
         'Cookie': 'SESSDATA='+random_SESSDATA(SESSDATA)+';'
     }
-    req = requests.get(url=api_url, headers=req_headers)
+    # 如果有代理就随机一个用
+    if len(proxy) >= 1:
+        req = requests.get(url=api_url, headers=req_headers,
+                           proxy={'https': random_proxy(proxy)})
+    else:
+        req = requests.get(url=api_url, headers=req_headers)
     return req.json()
 
 
 # 获取所有有弹幕的天
-def get_danmu_dates(cid, months, SESSDATA, daily):
+def get_danmu_dates(cid, months, SESSDATA, daily, proxy):
     result = []
     for month in months:
-        dates = get_danmu_months(cid, month, SESSDATA)
+        dates = get_danmu_months(cid, month, SESSDATA, proxy)
         if dates['code'] == 0:
             if dates['data'] != None:
                 for date in dates['data']:
@@ -48,17 +53,21 @@ def get_danmu_dates(cid, months, SESSDATA, daily):
 
 
 # 获取某天的历史弹幕。
-def get_day_danmu(cid, date, SESSDATA):
+def get_day_danmu(cid, date, SESSDATA, proxy):
     api_url = f'https://api.bilibili.com/x/v2/dm/web/history/seg.so?type=1&oid={cid}&date={date}'
-    req_header = {
+    req_headers = {
         'User-Agent': random_user_agent(),
         'Cookie': 'SESSDATA='+random_SESSDATA(SESSDATA)+';',
         'Referer': 'https://www.bilibili.com/',
         'Origin': 'https://www.bilibili.com'
     }
 
-    # 下载protobuf格式弹幕
-    data = requests.get(api_url, headers=req_header)
+    # 下载protobuf格式弹幕，有代理就整一个！
+    if len(proxy) >= 1:
+        data = requests.get(url=api_url, headers=req_headers, proxy={
+                            'https': random_proxy(proxy)})
+    else:
+        data = requests.get(api_url, headers=req_headers)
 
     try:
         target = bilidm_pb2.DmSegMobileReply()
@@ -119,6 +128,12 @@ def random_user_agent():
 def random_SESSDATA(SESSDATA):
     return random.choice(SESSDATA)
 
+# 随机使用代理
+
+
+def random_proxy(proxy):
+    return random.choice(proxy)
+
 
 if __name__ == '__main__':
     # av114514 1P的cid 190524
@@ -128,13 +143,16 @@ if __name__ == '__main__':
     # 历史弹幕结束年
     end_year = 2021
     # Cookie中的SESSDATA,可为多个
-    SESSDATA = ['d0ae0de7%2C1628585724%2Ccc213*21']
+    SESSDATA = ['']
     # 延迟，防屏蔽,单位：秒
     daily = 1
+    # http代理列表。可以为空。
+    https_proxy = []
 
     months = list_months(start_year, end_year)
     print('开始获取历史弹幕日期...时间较长耐心等待')
-    all_danmu_dates = get_danmu_dates(cid, months, SESSDATA, daily)
+    all_danmu_dates = get_danmu_dates(
+        cid, months, SESSDATA, daily, https_proxy)
     print('获取所有历史弹幕日期完成，开始扒取历史弹幕')
 
     # 初始化弹幕列表
@@ -142,7 +160,7 @@ if __name__ == '__main__':
 
     # 下载所有历史弹幕
     for date in all_danmu_dates:
-        history_danmu = get_day_danmu(cid, date, SESSDATA)
+        history_danmu = get_day_danmu(cid, date, SESSDATA, https_proxy)
         time.sleep(daily)
         danmu_list.append(history_danmu)
 
@@ -177,11 +195,11 @@ if __name__ == '__main__':
     danmu_xml_root = ET.Element('i')
     ET.SubElement(danmu_xml_root, 'chatserver').text = 'chat.bilibili.com'
     ET.SubElement(danmu_xml_root, 'chatid').text = f'{cid}'
-    ET.SubElement(danmu_xml_root, 'mission').text='0'
-    ET.SubElement(danmu_xml_root, 'maxlimit').text='100000000000'
-    ET.SubElement(danmu_xml_root, 'state').text='0'
-    ET.SubElement(danmu_xml_root, 'real_name').text='0'
-    ET.SubElement(danmu_xml_root, 'source').text='k-v'
+    ET.SubElement(danmu_xml_root, 'mission').text = '0'
+    ET.SubElement(danmu_xml_root, 'maxlimit').text = '100000000000'
+    ET.SubElement(danmu_xml_root, 'state').text = '0'
+    ET.SubElement(danmu_xml_root, 'real_name').text = '0'
+    ET.SubElement(danmu_xml_root, 'source').text = 'k-v'
     for day_danmu in danmu_list:
         for danmu in day_danmu:
             # fw作者脑抽写的代码，写完发现没啥用，留着吧
@@ -198,15 +216,18 @@ if __name__ == '__main__':
             danmu_action_list.append(danmu.action)
             danmu_pool_list.append(danmu.pool)
             '''
-            #每条弹幕
-            content=danmu.content
-            ET.SubElement(danmu_xml_root, 'd', {'p': f'{int(danmu.progress)/1000},{danmu.mode},{danmu.fontsize},{danmu.color},{danmu.ctime},{danmu.pool},{danmu.midHash},{danmu.idStr}'}).text = content
-            print('输出弹幕',content)
+            # 每条弹幕
+            content = danmu.content
+            ET.SubElement(danmu_xml_root, 'd', {
+                          'p': f'{int(danmu.progress)/1000},{danmu.mode},{danmu.fontsize},{danmu.color},{danmu.ctime},{danmu.pool},{danmu.midHash},{danmu.idStr}'}).text = content
+            print('输出弹幕', content)
 
-    #保存弹幕
-    result_danmu_xml = ET.ElementTree(danmu_xml_root)
-    result_danmu_xml.write(f'{cid}.xml','UTF-8')
-    
+    # 保存弹幕
+    try:
+        result_danmu_xml = ET.ElementTree(danmu_xml_root)
+        result_danmu_xml.write(f'{cid}.xml', 'UTF-8')
+    except:
+        print('保存xml弹幕失败。')
 
 
 # else:
