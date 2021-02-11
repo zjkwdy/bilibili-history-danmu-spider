@@ -1,6 +1,7 @@
 import json
-import time
 import random
+import time
+import xml.etree.ElementTree as ET
 
 import requests
 
@@ -71,7 +72,7 @@ def get_day_danmu(cid, date, SESSDATA):
 # 随机UA标
 def random_user_agent():
 
-    #复制的，不知道还有用没
+    # 复制的，不知道还有用没
     USER_AGENTS = [
         "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; "
         "SV1; AcooBrowser; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
@@ -111,23 +112,23 @@ def random_user_agent():
         "Presto/2.9.168 Version/11.52",
     ]
 
-
     return random.choice(USER_AGENTS)
 
 
-#随机SESSDATA，多个SESSDATA时很有用
+# 随机SESSDATA，多个SESSDATA时很有用
 def random_SESSDATA(SESSDATA):
     return random.choice(SESSDATA)
+
 
 if __name__ == '__main__':
     # av114514 1P的cid 190524
     cid = 190524
     # 历史弹幕开始年
-    start_year = 2011
+    start_year = 2018
     # 历史弹幕结束年
     end_year = 2021
     # Cookie中的SESSDATA,可为多个
-    SESSDATA=['']
+    SESSDATA = ['d0ae0de7%2C1628585724%2Ccc213*21']
     # 延迟，防屏蔽,单位：秒
     daily = 1
 
@@ -145,9 +146,67 @@ if __name__ == '__main__':
         time.sleep(daily)
         danmu_list.append(history_danmu)
 
-    # 存出json格式待处理弹幕，拿来分析
-    with open(f'{cid}.json', 'w') as result_file:
-        json.dump(danmu_list, result_file)
+    '''    
+        
+        #弹幕操作id列表初始化
+        danmu_id_list=[]
+        #弹幕文字列表初始化
+        danmu_content_list=[]
+        #弹幕出现时间列表初始化
+        danmu_progress_list=[]
+        #弹幕模式列表初始化
+        danmu_mode_list=[]
+        #字号列表初始化
+        danmu_font_size_list=[]
+        #弹幕颜色列表初始化
+        danmu_color_list=[]
+        #弹幕发送者列表初始化
+        danmu_author_list=[]
+        #弹幕发送时间列表初始化
+        danmu_create_time_list=[]
+        #弹幕权重列表初始化，拿来智能屏蔽的
+        danmu_weight_list=[]
+        #action初始化，母鸡干啥用的,但还是存起来好
+        danmu_action_list=[]
+        #弹幕池列表初始化
+        danmu_pool_list=[]
+    '''
+    # 把一大堆弹幕数据放进对应列表，输出xml
+    # xml根对象i
+    print('开始输出xml格式弹幕文件...')
+    danmu_xml_root = ET.Element('i')
+    ET.SubElement(danmu_xml_root, 'chatserver').text = 'chat.bilibili.com'
+    ET.SubElement(danmu_xml_root, 'chatid').text = f'{cid}'
+    ET.SubElement(danmu_xml_root, 'mission').text='0'
+    ET.SubElement(danmu_xml_root, 'maxlimit').text='100000000000'
+    ET.SubElement(danmu_xml_root, 'state').text='0'
+    ET.SubElement(danmu_xml_root, 'real_name').text='0'
+    ET.SubElement(danmu_xml_root, 'source').text='k-v'
+    for day_danmu in danmu_list:
+        for danmu in day_danmu:
+            # fw作者脑抽写的代码，写完发现没啥用，留着吧
+            '''
+            danmu_id_list.append(danmu.id)
+            danmu_progress_list.append(danmu.progress)
+            danmu_mode_list.append(danmu.mode)
+            danmu_font_size_list.append(danmu.fontsize)
+            danmu_color_list.append(danmu.color)
+            danmu_author_list.append(danmu.midhash)
+            danmu_content_list.append(danmu.content)
+            danmu_create_time_list.append(danmu.ctime)
+            danmu_weight_list.append(danmu.weight)
+            danmu_action_list.append(danmu.action)
+            danmu_pool_list.append(danmu.pool)
+            '''
+            #每条弹幕
+            content=danmu.content
+            ET.SubElement(danmu_xml_root, 'd', {'p': f'{int(danmu.progress)/1000},{danmu.mode},{danmu.fontsize},{danmu.color},{danmu.ctime},{danmu.pool},{danmu.midHash},{danmu.idStr}'}).text = content
+            print('输出弹幕',content)
+
+    #保存弹幕
+    result_danmu_xml = ET.ElementTree(danmu_xml_root)
+    result_danmu_xml.write(f'{cid}.xml','UTF-8')
+    
 
 
 # else:
