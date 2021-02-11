@@ -124,7 +124,7 @@ if __name__ == '__main__':
     # Cookie中的SESSDATA
     SESSDATA=''
     # 延迟，防屏蔽,单位：秒
-    daily = 0.5
+    daily = 1
 
     months = list_months(start_year, end_year)
     print('开始获取历史弹幕日期...时间较长耐心等待')
