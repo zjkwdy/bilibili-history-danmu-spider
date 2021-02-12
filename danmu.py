@@ -1,6 +1,9 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
 import json
 import random
 import time
+import logging
 import xml.etree.ElementTree as ET
 
 import requests
@@ -45,10 +48,12 @@ def get_danmu_dates(cid, months, SESSDATA, daily, proxy):
             if dates['data'] != None:
                 for date in dates['data']:
                     result.append(date)
-                    print(date, dates['message'])
+                    show_info(f'{date} 有弹幕！')
+            else:
+                show_info(f'{month}：啥弹幕也木有嘞！(＞︿＜)')
             time.sleep(daily)
         else:
-            print(f'ERROR:{dates}')
+            show_error(f'ERROR:{dates}')
     return result
 
 
@@ -72,10 +77,10 @@ def get_day_danmu(cid, date, SESSDATA, proxy):
     try:
         target = bilidm_pb2.DmSegMobileReply()
         target.ParseFromString(data.content)
-        print(f'{date}处理完成.')
+        show_info(f'{date}处理完成.')
         return target.elems
     except:
-        print(f'处理弹幕出错:{date}:{data.json()}')
+        show_error(f'处理弹幕出错:{date}:{data.json()}')
 
 
 # 随机UA标
@@ -120,40 +125,58 @@ def random_user_agent():
         "Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; fr) "
         "Presto/2.9.168 Version/11.52",
     ]
-
-    return random.choice(USER_AGENTS)
+    result=random.choice(USER_AGENTS)
+    logging.info(f'选取了随机UA标识:{result}')
+    return result
 
 
 # 随机SESSDATA，多个SESSDATA时很有用
 def random_SESSDATA(SESSDATA):
-    return random.choice(SESSDATA)
+    result=random.choice(SESSDATA)
+    logging.info(f'选择了随机的登录信息:{result}')
+    return result
+
+
 
 # 随机使用代理
-
-
 def random_proxy(proxy):
-    return random.choice(proxy)
+    result=random.choice(proxy)
+    logging.info(f'选择了随机的代理:{result}')
+    return result
 
+
+def show_info(message):
+    print(f'[INFO]:{message}')
+    logging.info(message)
+
+
+def show_error(message):
+    print(f'[ERROR]:{message}')
+    logging.error(message)
 
 if __name__ == '__main__':
     # av114514 1P的cid 190524
     cid = 190524
     # 历史弹幕开始年
-    start_year = 2015
+    start_year = 2011
     # 历史弹幕结束年
-    end_year = 2019
+    end_year = 2021
     # Cookie中的SESSDATA,可为多个，理论上越多越好，配合代理可以大量爬不被封
     SESSDATA = ['']
     # 延迟，防屏蔽,单位：秒
-    daily = 1
+    daily = 4
     # https代理列表。可以为空。
     https_proxy = []
 
+
+    #代码开始
+    #记录日志
+    logging.basicConfig(filename='getDanmu.log', level=logging.INFO)
     months = list_months(start_year, end_year)
-    print('开始获取历史弹幕日期...时间较长耐心等待')
+    show_info('开始获取历史弹幕日期...时间较长耐心等待')
     all_danmu_dates = get_danmu_dates(
         cid, months, SESSDATA, daily, https_proxy)
-    print('获取所有历史弹幕日期完成，开始扒取历史弹幕')
+    show_info('获取所有历史弹幕日期完成，开始扒取历史弹幕')
 
     # 初始化弹幕列表
     danmu_list = []
@@ -164,37 +187,14 @@ if __name__ == '__main__':
         time.sleep(daily)
         danmu_list.append(history_danmu)
 
-    '''    
-        
-        #弹幕操作id列表初始化
-        danmu_id_list=[]
-        #弹幕文字列表初始化
-        danmu_content_list=[]
-        #弹幕出现时间列表初始化
-        danmu_progress_list=[]
-        #弹幕模式列表初始化
-        danmu_mode_list=[]
-        #字号列表初始化
-        danmu_font_size_list=[]
-        #弹幕颜色列表初始化
-        danmu_color_list=[]
-        #弹幕发送者列表初始化
-        danmu_author_list=[]
-        #弹幕发送时间列表初始化
-        danmu_create_time_list=[]
-        #弹幕权重列表初始化，拿来智能屏蔽的
-        danmu_weight_list=[]
-        #action初始化，母鸡干啥用的,但还是存起来好
-        danmu_action_list=[]
-        #弹幕池列表初始化
-        danmu_pool_list=[]
-    '''
+    #日后跟踪用
+    logging.debug(str(danmu_list))
     #发现有重复弹幕，于是拿来了这个。。
     danmu_id_list=[]
 
     # 把一大堆弹幕数据放进对应列表，输出xml
     # xml根对象i
-    print('开始输出xml格式弹幕文件...')
+    show_info('开始输出xml格式弹幕文件...')
     danmu_xml_root = ET.Element('i')
     #大多数子对象值都是固定的
     ET.SubElement(danmu_xml_root, 'chatserver').text = 'chat.bilibili.com'
@@ -205,40 +205,29 @@ if __name__ == '__main__':
     ET.SubElement(danmu_xml_root, 'real_name').text = '0'
     ET.SubElement(danmu_xml_root, 'source').text = 'k-v'
     for day_danmu in danmu_list:
-        for danmu in day_danmu:
-            # fw作者脑抽写的代码，写完发现没啥用，留着吧
-            '''
-            danmu_id_list.append(danmu.id)
-            danmu_progress_list.append(danmu.progress)
-            danmu_mode_list.append(danmu.mode)
-            danmu_font_size_list.append(danmu.fontsize)
-            danmu_color_list.append(danmu.color)
-            danmu_author_list.append(danmu.midhash)
-            danmu_content_list.append(danmu.content)
-            danmu_create_time_list.append(danmu.ctime)
-            danmu_weight_list.append(danmu.weight)
-            danmu_action_list.append(danmu.action)
-            danmu_pool_list.append(danmu.pool)
-            '''
-            #弹幕id入库防止重复
-            if danmu.id not in danmu_id_list:
-                danmu_id_list.append(danmu.id)
-                # 每条弹幕
-                content = danmu.content
-                #踩坑：处理完发现播放器里面一条弹幕都木有，查文档发现xml弹幕和protobuf弹幕出现时间这个参数不一样，xml是秒，protobuf是毫秒。
-                ET.SubElement(danmu_xml_root, 'd', {'p': f'{int(danmu.progress)/1000},{danmu.mode},{danmu.fontsize},{danmu.color},{danmu.ctime},{danmu.pool},{danmu.midHash},{danmu.idStr}'}).text = content
-                print('输出弹幕', content)
-            else:
-                print(f'api输出了重复弹幕：{danmu.content}')
+        try:
+            for danmu in day_danmu:
+                #弹幕id入库防止重复
+                if danmu.id not in danmu_id_list:
+                    danmu_id_list.append(danmu.id)
+                    # 每条弹幕
+                    content = danmu.content
+                    #踩坑：处理完发现播放器里面一条弹幕都木有，查文档发现xml弹幕和protobuf弹幕出现时间这个参数不一样，xml是秒，protobuf是毫秒。
+                    ET.SubElement(danmu_xml_root, 'd', {'p': f'{int(danmu.progress)/1000},{danmu.mode},{danmu.fontsize},{danmu.color},{danmu.ctime},{danmu.pool},{danmu.midHash},{danmu.idStr}'}).text = content
+                    show_info('输出弹幕', content)
+                else:
+                    show_info(f'api输出了重复弹幕：{danmu.content}')
+        except:
+            show_error('输出文件中出问题！！可能少一些弹幕。')
 
     # 保存弹幕
     try:
         result_danmu_xml = ET.ElementTree(danmu_xml_root)
         result_danmu_xml.write(f'{cid}-{start_year}-{end_year}.xml', 'UTF-8')
-        print(f'保存xml弹幕成功! {cid}-{start_year}-{end_year}.xml ,输出了{len(danmu_id_list)}条弹幕。')
+        show_info(f'保存xml弹幕成功! {cid}-{start_year}-{end_year}.xml ,输出了{len(danmu_id_list)}条弹幕。')
     except:
-        print('保存xml弹幕失败。')
+        show_error('保存xml弹幕失败。')
 
 
 # else:
-    #print('这是Plan B? (雾)')
+    #show_info('这是Plan B? (雾)')
