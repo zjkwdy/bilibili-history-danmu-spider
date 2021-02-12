@@ -139,14 +139,14 @@ if __name__ == '__main__':
     # av114514 1P的cid 190524
     cid = 190524
     # 历史弹幕开始年
-    start_year = 2018
+    start_year = 2015
     # 历史弹幕结束年
-    end_year = 2021
-    # Cookie中的SESSDATA,可为多个
+    end_year = 2019
+    # Cookie中的SESSDATA,可为多个，理论上越多越好，配合代理可以大量爬不被封
     SESSDATA = ['']
     # 延迟，防屏蔽,单位：秒
     daily = 1
-    # http代理列表。可以为空。
+    # https代理列表。可以为空。
     https_proxy = []
 
     months = list_months(start_year, end_year)
@@ -189,10 +189,14 @@ if __name__ == '__main__':
         #弹幕池列表初始化
         danmu_pool_list=[]
     '''
+    #发现有重复弹幕，于是拿来了这个。。
+    danmu_id_list=[]
+
     # 把一大堆弹幕数据放进对应列表，输出xml
     # xml根对象i
     print('开始输出xml格式弹幕文件...')
     danmu_xml_root = ET.Element('i')
+    #大多数子对象值都是固定的
     ET.SubElement(danmu_xml_root, 'chatserver').text = 'chat.bilibili.com'
     ET.SubElement(danmu_xml_root, 'chatid').text = f'{cid}'
     ET.SubElement(danmu_xml_root, 'mission').text = '0'
@@ -216,16 +220,22 @@ if __name__ == '__main__':
             danmu_action_list.append(danmu.action)
             danmu_pool_list.append(danmu.pool)
             '''
-            # 每条弹幕
-            content = danmu.content
-            ET.SubElement(danmu_xml_root, 'd', {
-                          'p': f'{int(danmu.progress)/1000},{danmu.mode},{danmu.fontsize},{danmu.color},{danmu.ctime},{danmu.pool},{danmu.midHash},{danmu.idStr}'}).text = content
-            print('输出弹幕', content)
+            #弹幕id入库防止重复
+            if danmu.id not in danmu_id_list:
+                danmu_id_list.append(danmu.id)
+                # 每条弹幕
+                content = danmu.content
+                #踩坑：处理完发现播放器里面一条弹幕都木有，查文档发现xml弹幕和protobuf弹幕出现时间这个参数不一样，xml是秒，protobuf是毫秒。
+                ET.SubElement(danmu_xml_root, 'd', {'p': f'{int(danmu.progress)/1000},{danmu.mode},{danmu.fontsize},{danmu.color},{danmu.ctime},{danmu.pool},{danmu.midHash},{danmu.idStr}'}).text = content
+                print('输出弹幕', content)
+            else:
+                print(f'api输出了重复弹幕：{danmu.content}')
 
     # 保存弹幕
     try:
         result_danmu_xml = ET.ElementTree(danmu_xml_root)
-        result_danmu_xml.write(f'{cid}.xml', 'UTF-8')
+        result_danmu_xml.write(f'{cid}-{start_year}-{end_year}.xml', 'UTF-8')
+        print(f'保存xml弹幕成功! {cid}-{start_year}-{end_year}.xml ,输出了{len(danmu_id_list)}条弹幕。')
     except:
         print('保存xml弹幕失败。')
 
