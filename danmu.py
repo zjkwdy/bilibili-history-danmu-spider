@@ -4,6 +4,7 @@ import json
 import random
 import time
 import logging
+import configparser
 import xml.etree.ElementTree as ET
 
 import requests
@@ -125,22 +126,21 @@ def random_user_agent():
         "Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; fr) "
         "Presto/2.9.168 Version/11.52",
     ]
-    result=random.choice(USER_AGENTS)
+    result = random.choice(USER_AGENTS)
     logging.info(f'选取了随机UA标识:{result}')
     return result
 
 
 # 随机SESSDATA，多个SESSDATA时很有用
 def random_SESSDATA(SESSDATA):
-    result=random.choice(SESSDATA)
+    result = random.choice(SESSDATA)
     logging.info(f'选择了随机的登录信息:{result}')
     return result
 
 
-
 # 随机使用代理
 def random_proxy(proxy):
-    result=random.choice(proxy)
+    result = random.choice(proxy)
     logging.info(f'选择了随机的代理:{result}')
     return result
 
@@ -154,23 +154,40 @@ def show_error(message):
     print(f'[ERROR]:{message}')
     logging.error(message)
 
+
 if __name__ == '__main__':
+    # 配置已经移动到danmu.ini
     # av114514 1P的cid 190524
-    cid = 190524
+    #cid = 190524
     # 历史弹幕开始年
-    start_year = 2011
+    #start_year = 2012
     # 历史弹幕结束年
-    end_year = 2021
+    #end_year = 2021
     # Cookie中的SESSDATA,可为多个，理论上越多越稳定
-    SESSDATA = ['']
+    #SESSDATA = ['']
     # 延迟，防屏蔽,单位：秒，越大越稳定，但是爬起来更慢。是全局延迟，每次网络请求后都会暂停
-    daily = 5
+    #daily = 5
     # https代理列表。可以为空。
-    https_proxy = []
+    #https_proxy = []
 
-
-    #代码开始
-    #记录日志
+    # 代码开始
+    config = configparser.RawConfigParser()
+    try:
+        config.read('danmu.ini', encoding='utf-8')
+        SESSDATA = str(config.items('account')[0][1]).split(',')
+        cid = int(config.items('spider')[0][1])
+        start_year = int(config.items('spider')[1][1])
+        end_year = int(config.items('spider')[2][1])
+        daily = int(config.items('spider')[3][1])
+        #如果没有代理就变个空的
+        if config.items('spider')[4][1] != '':
+            https_proxy = str(config.items('spider')[4][1]).split(',')
+        else:
+            https_proxy = []
+    except:
+        show_error('兄啊你的配置文件有、问题啊！')
+        exit(code=1)
+    # 记录日志
     logging.basicConfig(filename='getDanmu.log', level=logging.INFO)
     months = list_months(start_year, end_year)
     show_info('开始获取历史弹幕日期...时间较长耐心等待')
@@ -187,16 +204,16 @@ if __name__ == '__main__':
         time.sleep(daily)
         danmu_list.append(history_danmu)
 
-    #日后跟踪用
+    # 日后跟踪用
     logging.debug(str(danmu_list))
-    #发现有重复弹幕，于是拿来了这个。。
-    danmu_id_list=[]
+    # 发现有重复弹幕，于是拿来了这个。。
+    danmu_id_list = []
 
     # 把一大堆弹幕数据放进对应列表，输出xml
     # xml根对象i
     show_info('开始输出xml格式弹幕文件...')
     danmu_xml_root = ET.Element('i')
-    #大多数子对象值都是固定的
+    # 大多数子对象值都是固定的
     ET.SubElement(danmu_xml_root, 'chatserver').text = 'chat.bilibili.com'
     ET.SubElement(danmu_xml_root, 'chatid').text = f'{cid}'
     ET.SubElement(danmu_xml_root, 'mission').text = '0'
@@ -207,13 +224,14 @@ if __name__ == '__main__':
     for day_danmu in danmu_list:
         try:
             for danmu in day_danmu:
-                #弹幕id入库防止重复
+                # 弹幕id入库防止重复
                 if danmu.id not in danmu_id_list:
                     danmu_id_list.append(danmu.id)
                     # 每条弹幕
                     content = danmu.content
-                    #踩坑：处理完发现播放器里面一条弹幕都木有，查文档发现xml弹幕和protobuf弹幕出现时间这个参数不一样，xml是秒，protobuf是毫秒。
-                    ET.SubElement(danmu_xml_root, 'd', {'p': f'{int(danmu.progress)/1000},{danmu.mode},{danmu.fontsize},{danmu.color},{danmu.ctime},{danmu.pool},{danmu.midHash},{danmu.idStr}'}).text = content
+                    # 踩坑：处理完发现播放器里面一条弹幕都木有，查文档发现xml弹幕和protobuf弹幕出现时间这个参数不一样，xml是秒，protobuf是毫秒。
+                    ET.SubElement(danmu_xml_root, 'd', {
+                                  'p': f'{int(danmu.progress)/1000},{danmu.mode},{danmu.fontsize},{danmu.color},{danmu.ctime},{danmu.pool},{danmu.midHash},{danmu.idStr}'}).text = content
                     show_info('输出弹幕'+content)
                 else:
                     show_info(f'api输出了重复弹幕：{danmu.content}')
@@ -224,7 +242,8 @@ if __name__ == '__main__':
     try:
         result_danmu_xml = ET.ElementTree(danmu_xml_root)
         result_danmu_xml.write(f'{cid}-{start_year}-{end_year}.xml', 'UTF-8')
-        show_info(f'保存xml弹幕成功! {cid}-{start_year}-{end_year}.xml ,输出了{len(danmu_id_list)}条弹幕。')
+        show_info(
+            f'保存xml弹幕成功! {cid}-{start_year}-{end_year}.xml ,输出了{len(danmu_id_list)}条弹幕。')
     except:
         show_error('保存xml弹幕失败。')
 
