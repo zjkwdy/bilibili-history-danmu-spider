@@ -1,8 +1,8 @@
-
 # bilibili-history-danmu-spider
 
 * * * 
 
+感谢[bilibili-API-colletc](https://github.com/SocialSisterYi/bilibili-API-collect)
 用来爬历史弹幕用的，可以整全弹幕什么的。目前支持爬取所有历史弹幕，输出标准xml格式弹幕 
 使用的是B站protobuf历史弹幕接口，原因就是b站xml格式历史弹幕接口爆炸了，可以用但是返回弹幕已被关闭的信息。
 
