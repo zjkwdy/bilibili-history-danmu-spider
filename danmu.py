@@ -158,7 +158,7 @@ if __name__ == '__main__':
     # av114514 1P的cid 190524
     cid = 190524
     # 历史弹幕开始年
-    start_year = 2011
+    start_year = 2017
     # 历史弹幕结束年
     end_year = 2021
     # Cookie中的SESSDATA,可为多个，理论上越多越好，配合代理可以大量爬不被封
@@ -214,7 +214,7 @@ if __name__ == '__main__':
                     content = danmu.content
                     #踩坑：处理完发现播放器里面一条弹幕都木有，查文档发现xml弹幕和protobuf弹幕出现时间这个参数不一样，xml是秒，protobuf是毫秒。
                     ET.SubElement(danmu_xml_root, 'd', {'p': f'{int(danmu.progress)/1000},{danmu.mode},{danmu.fontsize},{danmu.color},{danmu.ctime},{danmu.pool},{danmu.midHash},{danmu.idStr}'}).text = content
-                    show_info('输出弹幕', content)
+                    show_info('输出弹幕'+content)
                 else:
                     show_info(f'api输出了重复弹幕：{danmu.content}')
         except:
