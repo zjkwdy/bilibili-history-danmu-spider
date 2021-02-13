@@ -53,7 +53,7 @@ def get_danmu_dates(cid, months, SESSDATA, daily, proxy):
                 show_info(f'{month}：啥弹幕也木有嘞！(＞︿＜)')
             time.sleep(daily)
         else:
-            show_error(f'ERROR:{dates}')
+            show_error(f'{dates}')
     return result
 
 
@@ -158,13 +158,13 @@ if __name__ == '__main__':
     # av114514 1P的cid 190524
     cid = 190524
     # 历史弹幕开始年
-    start_year = 2017
+    start_year = 2011
     # 历史弹幕结束年
     end_year = 2021
-    # Cookie中的SESSDATA,可为多个，理论上越多越好，配合代理可以大量爬不被封
+    # Cookie中的SESSDATA,可为多个，理论上越多越稳定
     SESSDATA = ['']
-    # 延迟，防屏蔽,单位：秒
-    daily = 4
+    # 延迟，防屏蔽,单位：秒，越大越稳定，但是爬起来更慢。是全局延迟，每次网络请求后都会暂停
+    daily = 5
     # https代理列表。可以为空。
     https_proxy = []
 

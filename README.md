@@ -1,5 +1,6 @@
 
-# bilibili-history-danmu-spider 
+# bilibili-history-danmu-spider
+
 * * * 
 
 用来爬历史弹幕用的，可以整全弹幕什么的。目前支持爬取所有历史弹幕，输出标准xml格式弹幕 
